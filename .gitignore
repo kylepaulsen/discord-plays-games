@@ -1,0 +1,8 @@
+gbajs
+dist
+node_modules
+roms
+config.json
+GBA.BIOS
+out.png
+*.sav
