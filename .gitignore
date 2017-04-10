@@ -1,8 +1,8 @@
 gbajs
-dist
+gba.js
 node_modules
-roms
 config.json
 GBA.BIOS
 out.png
 *.sav
+*.gba

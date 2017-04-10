@@ -6,11 +6,9 @@ console.log('Welcome to the build script.', '\nUse -c flag to clean.');
 
 const stubsFile = './browserStubs.js';
 const indexFile = 'gbajs/index.html';
-const targetHTMLFile = 'dist/out.html';
-const targetJSFile = 'dist/gba.js';
+const targetJSFile = 'gba.js';
 
 try {
-    fs.unlinkSync(targetHTMLFile);
     fs.unlinkSync(targetJSFile);
 } catch(e) {}
 

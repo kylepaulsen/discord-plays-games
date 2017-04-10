@@ -1,7 +1,7 @@
 {
-  "name": "gba-bot",
+  "name": "gba-discord-bot",
   "version": "1.0.0",
-  "description": "Lets play gba",
+  "description": "Let's play gba in discord!",
   "main": "start.js",
   "scripts": {
     "start": "node start.js",
@@ -17,7 +17,6 @@
   "dependencies": {
     "co": "^4.6.0",
     "discord.io": "^2.5.1",
-    "pngjs": "^3.0.1",
-    "useref-file": "^0.2.1"
+    "pngjs": "^3.0.1"
   }
 }

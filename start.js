@@ -1,7 +1,22 @@
+const fs = require('fs');
 const fork = require('child_process').fork;
 
 let bot;
 let emu;
+
+try {
+    require('./config');
+} catch (e) {
+    console.error('Need ./config.json file! Making example config file...');
+    const exampleConfig = `{
+    "commandCooldown": 5000,
+    "startingRom": "roms/someRom.gba",
+    "botChannel": "gba",
+    "discordToken": "token-here"
+}`;
+    fs.writeFileSync('config.json', exampleConfig);
+    process.exit();
+}
 
 function startEmuFork() {
     emu = fork('./emu.js');

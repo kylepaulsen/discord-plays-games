@@ -85,7 +85,7 @@ function startDiscordBot() {
         const channels = Object.keys(bot.channels);
         for (let x = 0; x < channels.length; x++) {
             const chan = bot.channels[channels[x]];
-            if (chan.type === 'text' && chan.name === 'gba') {
+            if (chan.type === 'text' && chan.name === config.botChannel) {
                 gbaChannel = channels[x];
                 break;
             }

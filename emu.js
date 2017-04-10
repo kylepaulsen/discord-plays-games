@@ -6,7 +6,7 @@ const PNG = require('pngjs').PNG;
 
 const config = require('./config.json');
 const fakeWindow = require('./browserStubs.js');
-const GameBoyAdv = require('./dist/gba.js');
+const GameBoyAdv = require('./gba.js');
 
 const width = 240;
 const height = 160;
@@ -14,7 +14,7 @@ const height = 160;
 let saveTimeout;
 let gba;
 let canvas;
-let targetRom = 'roms/pokemon.gba';
+let targetRom = config.startingRom;
 let saveFile;
 
 function log(msg) {
@@ -37,11 +37,11 @@ function simpleError(e) {
 }
 
 function loadSave() {
-    saveFile = path.basename(targetRom) + '.sav';
+    saveFile = path.join('saves', path.basename(targetRom) + '.sav');
     let save = '';
     try {
         save = fs.readFileSync(saveFile, 'binary');
-    } catch(e) {
+    } catch (e) {
         log('Couldn\'t find or load save file!');
     }
 
@@ -57,13 +57,31 @@ function loadSave() {
 }
 
 function loadRom(filename) {
-    const buffer = fs.readFileSync(filename);
-    const ab = new ArrayBuffer(buffer.length);
-    const view = new Uint8Array(ab);
-    for (let i = 0; i < buffer.length; ++i) {
-        view[i] = buffer[i];
+    try {
+        const buffer = fs.readFileSync(filename);
+        const ab = new ArrayBuffer(buffer.length);
+        const view = new Uint8Array(ab);
+        for (let i = 0; i < buffer.length; ++i) {
+            view[i] = buffer[i];
+        }
+        return ab;
+    } catch (e) {
+        log('===== Couldn\'t find or load ' + targetRom);
     }
-    return ab;
+}
+
+function loadGame(filename) {
+    gba.pause();
+    gba.reset();
+    const rom = loadRom(filename);
+    if (rom) {
+        targetRom = filename;
+        gba.setRom(rom);
+        log('loaded rom: ' + filename);
+        loadSave();
+        gba.runStable();
+        log('running emu...');
+    }
 }
 
 function startEmulator() {
@@ -84,38 +102,17 @@ function startEmulator() {
     gba.logLevel = gba.LOG_ERROR;
 
     gba.setBios(loadRom('gbajs/resources/bios.bin'));
-    gba.setRom(loadRom('roms/pokemon.gba'));
-    loadSave();
-    gba.runStable();
-    log('running emu...');
+    loadGame(config.startingRom);
 }
 
 function saveScreenshot() {
     log('in save screenshot');
-    /*
-    return new Promise(function(res) {
-        log('setting png data');
-        const png = new PNG({
-            width,
-            height
-        });
-        png.data.set(canvas.context.imageData.data);
-        log('opening screenshot write stream');
-        png.pack().pipe(fs.createWriteStream('out.png'))
-        .on('finish', res)
-        .on('error', function(e) {
-            log('error saving screenshot! ' + e);
-            setTimeout(function() {
-                saveScreenshot().then(res);
-            }, 100);
-        });
-    });
-    */
-    log('setting png data');
     const png = new PNG({width, height});
+    log('setting png data');
     png.data.set(canvas.context.imageData.data);
     const buffer = PNG.sync.write(png);
     fs.writeFileSync('out.png', buffer);
+    log('made it past saveScreenshot');
 }
 
 const pressButton = co.wrap(function*(button, repeat, delay) {
@@ -155,12 +152,10 @@ function writeSaveFile() {
         for (let x = 0; x < len; x++) {
             str += String.fromCharCode(arr[x]);
         }
-        saveFile = path.basename(targetRom) + '.sav';
+        saveFile = path.join('saves', path.basename(targetRom) + '.sav');
         fs.writeFile(saveFile, str, 'binary', simpleError);
     }
 }
-
-//setInterval(saveScreenshot, 5000);
 
 process.on('message', function(msg) {
     log('got outside message: ' + JSON.stringify(msg));
@@ -168,10 +163,6 @@ process.on('message', function(msg) {
         saveScreenshot();
         log('cooldown: waiting ' + config.commandCooldown + 'ms');
         sleep(config.commandCooldown)
-        /*.then(function() {
-            log('cooldown: waiting ' + config.commandCooldown + 'ms');
-            return sleep(config.commandCooldown)
-        })*/
         .then(function() {
             process.send('update');
         }).catch(simpleError);
@@ -182,10 +173,8 @@ process.on('message', function(msg) {
             log('cooldown: waiting ' + extraDelay + 'ms');
             return sleep(extraDelay);
         })
-        //.then(saveScreenshot)
         .then(function() {
             saveScreenshot();
-            log('made it past saveScreenshot');
             process.send('update');
             if (saveTimeout) {
                 clearTimeout(saveTimeout);
