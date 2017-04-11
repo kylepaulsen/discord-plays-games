@@ -3,6 +3,8 @@ const fork = require('child_process').fork;
 
 let bot;
 let emu;
+let emuPingIntervalId;
+let lastPong;
 
 try {
     require('./config');
@@ -22,6 +24,10 @@ function startEmuFork() {
     emu = fork('./emu.js');
 
     emu.on('message', function(msg) {
+        if (msg === 'pong') {
+            lastPong = Date.now();
+            return;
+        }
         bot.send(msg);
     });
 
@@ -29,6 +35,17 @@ function startEmuFork() {
         console.log('=== EMU FORK EXITED! Restarting...');
         setTimeout(startEmuFork, 1000);
     });
+
+    if (emuPingIntervalId) {
+        clearInterval(emuPingIntervalId);
+    }
+    emuPingIntervalId = setInterval(function() {
+        emu.send('ping');
+        if (lastPong && Date.now() - lastPong > (2 * 60 * 1000)) {
+            console.log('=== EMU STOPPED RESPONDING! Killing...');
+            emu.kill();
+        }
+    }, 30000);
 }
 
 function startBotFork() {

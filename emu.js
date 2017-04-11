@@ -12,6 +12,7 @@ const width = 240;
 const height = 160;
 
 let saveTimeout;
+let pauseTimeout;
 let gba;
 let canvas;
 let targetRom = config.startingRom;
@@ -141,6 +142,30 @@ const pressButton = co.wrap(function*(button, repeat, delay) {
     return waitTime;
 });
 
+function copyFile(source, target, cb) {
+    var cbCalled = false;
+
+    function done(err) {
+        if (!cbCalled) {
+            cb(err);
+            cbCalled = true;
+        }
+    }
+
+    var rd = fs.createReadStream(source);
+    rd.on('error', function(err) {
+        done(err);
+    });
+    var wr = fs.createWriteStream(target);
+    wr.on('error', function(err) {
+        done(err);
+    });
+    wr.on('close', function() {
+        done();
+    });
+    rd.pipe(wr);
+}
+
 function writeSaveFile() {
     log('saving file!');
     saveTimeout = 0;
@@ -153,34 +178,56 @@ function writeSaveFile() {
             str += String.fromCharCode(arr[x]);
         }
         saveFile = path.join('saves', path.basename(targetRom) + '.sav');
-        fs.writeFile(saveFile, str, 'binary', simpleError);
+        copyFile(saveFile, saveFile + '.bak', function() {
+            fs.writeFileSync(saveFile, str, 'binary');
+        });
     }
 }
 
 process.on('message', function(msg) {
-    log('got outside message: ' + JSON.stringify(msg));
-    if (msg.cmd === 'UPDATE') {
-        saveScreenshot();
-        log('cooldown: waiting ' + config.commandCooldown + 'ms');
-        sleep(config.commandCooldown)
-        .then(function() {
-            process.send('update');
-        }).catch(simpleError);
+    if (msg === 'ping') {
+        process.send('pong');
     } else {
-        pressButton(msg.cmd, msg.repeat)
-        .then(function(delay) {
-            const extraDelay = Math.max(config.commandCooldown - delay, 1000);
-            log('cooldown: waiting ' + extraDelay + 'ms');
-            return sleep(extraDelay);
-        })
-        .then(function() {
-            saveScreenshot();
-            process.send('update');
-            if (saveTimeout) {
-                clearTimeout(saveTimeout);
+        log('got outside message: ' + JSON.stringify(msg));
+
+        if (msg.cmd === 'UPDATE') {
+            if (gba.paused) {
+                gba.runStable();
             }
-            saveTimeout = setTimeout(writeSaveFile, 60000);
-        }).catch(simpleError);
+            sleep(500).then(function() {
+                saveScreenshot();
+                log('cooldown: waiting ' + config.commandCooldown + 'ms');
+                sleep(config.commandCooldown)
+                .then(function() {
+                    process.send('update');
+                }).catch(simpleError);
+            });
+        } else {
+            if (gba.paused) {
+                gba.runStable();
+            }
+            pressButton(msg.cmd, msg.repeat)
+            .then(function(delay) {
+                const extraDelay = Math.max(config.commandCooldown - delay, 1000);
+                log('cooldown: waiting ' + extraDelay + 'ms');
+                return sleep(extraDelay);
+            })
+            .then(function() {
+                saveScreenshot();
+                process.send('update');
+                if (saveTimeout) {
+                    clearTimeout(saveTimeout);
+                }
+                if (pauseTimeout) {
+                    clearTimeout(pauseTimeout);
+                }
+                saveTimeout = setTimeout(writeSaveFile, 60000);
+                pauseTimeout = setTimeout(function() {
+                    log('pausing!');
+                    gba.pause();
+                }, 30000);
+            }).catch(simpleError);
+        }
     }
 });
 
