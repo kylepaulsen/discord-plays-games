@@ -10,7 +10,7 @@ function log(msg) {
     const d = new Date();
     const t = '(' + (d.getMonth() + 1) + '/' + d.getDate() + '/' +
         d.getFullYear() + ' ' + d.getHours() + ':' + d.getMinutes() + ':' + d.getSeconds() + ') ';
-    console.log(t + 'BOT: ' + msg);
+    console.log(t + 'DISCORD BOT: ' + msg);
 }
 
 function getManyMessages(cb) {
@@ -56,7 +56,7 @@ function updateScreen() {
     log('uploading image!');
     bot.uploadFile({
         to: gbaChannel,
-        file: 'out.png',
+        file: config.screenshotPath,
         message: 'Type: a, b, l, r, up, down, left, right, start, select, update, or clean. ' +
             'You can also multiply some commands like this: up*3 . ' +
             'There is a command cooldown of 5 seconds.'
@@ -123,9 +123,9 @@ function startDiscordBot() {
             repeat = Math.max(Math.min(repeat, 9), 1);
         }
 
-        const keycode = validKeys[cmd];
+        const isValidKey = validKeys[cmd];
         const specialCommand = specialCommands[cmd];
-        if (channelID === gbaChannel && (keycode || specialCommand)) {
+        if (channelID === gbaChannel && (isValidKey || specialCommand)) {
             const now = Date.now();
             if (now - lastButtonPress > config.commandCooldown) {
                 log('got command: ' + cmd);

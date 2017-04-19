@@ -17,6 +17,7 @@
   "dependencies": {
     "co": "^4.6.0",
     "discord.io": "^2.5.1",
-    "pngjs": "^3.0.1"
+    "pngjs": "^3.0.1",
+    "robotjs": "^0.4.7"
   }
 }

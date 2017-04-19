@@ -1,10 +1,8 @@
 const fs = require('fs');
 const fork = require('child_process').fork;
 
+let keyboardRobot;
 let bot;
-let emu;
-let emuPingIntervalId;
-let lastPong;
 
 try {
     require('./config');
@@ -12,47 +10,19 @@ try {
     console.error('Need ./config.json file! Making example config file...');
     const exampleConfig = `{
     "commandCooldown": 5000,
-    "startingRom": "roms/someRom.gba",
     "botChannel": "gba",
+    "screenshotPath": "screen.png",
     "discordToken": "token-here"
 }`;
     fs.writeFileSync('config.json', exampleConfig);
     process.exit();
 }
 
-function startEmuFork() {
-    emu = fork('./emu.js');
-
-    emu.on('message', function(msg) {
-        if (msg === 'pong') {
-            lastPong = Date.now();
-            return;
-        }
-        bot.send(msg);
-    });
-
-    emu.on('exit', function() {
-        console.log('=== EMU FORK EXITED! Restarting...');
-        setTimeout(startEmuFork, 1000);
-    });
-
-    if (emuPingIntervalId) {
-        clearInterval(emuPingIntervalId);
-    }
-    emuPingIntervalId = setInterval(function() {
-        emu.send('ping');
-        if (lastPong && Date.now() - lastPong > (2 * 60 * 1000)) {
-            console.log('=== EMU STOPPED RESPONDING! Killing...');
-            emu.kill();
-        }
-    }, 30000);
-}
-
 function startBotFork() {
     bot = fork('./bot.js');
 
     bot.on('message', function(msg) {
-        emu.send(msg);
+        keyboardRobot.send(msg);
     });
 
     bot.on('exit', function() {
@@ -61,5 +31,18 @@ function startBotFork() {
     });
 }
 
-startEmuFork();
+function startKeyboardRobotFork() {
+    keyboardRobot = fork('./keyboardRobot.js');
+
+    keyboardRobot.on('message', function(msg) {
+        bot.send(msg);
+    });
+
+    keyboardRobot.on('exit', function() {
+        console.log('=== KEYBOARDROBOT FORK EXITED! Restarting...');
+        setTimeout(startKeyboardRobotFork, 1000);
+    });
+}
+
+startKeyboardRobotFork();
 startBotFork();
