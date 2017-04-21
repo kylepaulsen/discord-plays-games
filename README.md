@@ -1,4 +1,7 @@
 # discord-plays-games
+
+![Example](/screenshot.png?raw=true)
+
 This bot will allow you to play games with your friends in discord sorta like [twitch plays pokemon](https://www.twitch.tv/twitchplayspokemon). It does this by sending the keyboard commands typed in chat to the game of your choice (game must have a screenshot key. Pause and resume keys are helpful but not required).
 
 # How to use
