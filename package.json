@@ -1,23 +1,17 @@
 {
-  "name": "gba-discord-bot",
+  "name": "discord-plays-games",
   "version": "1.0.0",
-  "description": "Let's play gba in discord!",
+  "description": "Let's play games in discord!",
   "main": "start.js",
   "scripts": {
     "start": "node start.js",
-    "emu": "node emu.js",
-    "bot": "node bot.js",
-    "build": "node build.js",
-    "clean": "node build.js -c",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "postinstall": "bash ./postinstall.sh"
   },
   "author": "Kyle Paulsen <kyle.a.paulsen@gmail.com> (http://www.kylepaulsen.com/)",
   "license": "ISC",
   "dependencies": {
     "co": "^4.6.0",
     "discord.io": "^2.5.1",
-    "pngjs": "^3.0.1",
     "robotjs": "^0.4.7"
   }
 }

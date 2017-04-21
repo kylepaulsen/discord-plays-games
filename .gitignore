@@ -1,9 +1,2 @@
-gbajs
-gba.js
 node_modules
 config.json
-GBA.BIOS
-out.png
-*.sav
-*.gba
-*.bak

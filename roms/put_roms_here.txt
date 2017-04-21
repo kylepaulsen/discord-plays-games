@@ -1,1 +1,0 @@
-Put .gba roms here. Must be .gba extension.

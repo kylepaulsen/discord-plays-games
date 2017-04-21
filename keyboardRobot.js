@@ -5,10 +5,6 @@ const robot = require('robotjs');
 
 const config = require('./config.json');
 
-const screenshotKey = 'p';
-const pauseKey = 'i';
-const unpauseKey = 'o';
-
 /*
 Go to a site like this:
 https://jsemu3.github.io/gba/launcher.html#pokemonsapphire
@@ -66,23 +62,10 @@ const sleep = function(amt) {
     });
 };
 
-const buttonsToKeyboard = {
-    a: 'x',
-    b: 'z',
-    up: 'up',
-    left: 'left',
-    right: 'right',
-    down: 'down',
-    start: 'enter',
-    select: 'shift',
-    l: 1,
-    r: 2
-};
-
 const pressButton = co.wrap(function*(button, repeat, delay) {
     button = button.toLowerCase();
 
-    const keyboardKey = buttonsToKeyboard[button];
+    const keyboardKey = config.chatToKeyboardKey[button];
     const downUpDelay = delay || 100;
     const betweenBtnDelay = 500;
 
@@ -112,9 +95,9 @@ const saveScreenshot = co.wrap(function*() {
     } catch (e) {}
 
     log('taking screenshot');
-    robot.keyToggle(screenshotKey, 'down');
+    robot.keyToggle(config.screenshotKey, 'down');
     yield sleep(100);
-    robot.keyToggle(screenshotKey, 'up');
+    robot.keyToggle(config.screenshotKey, 'up');
     yield sleep(100);
 
     log('waiting for screenshot to save');
@@ -125,16 +108,16 @@ const saveScreenshot = co.wrap(function*() {
 });
 
 const pause = co.wrap(function*() {
-    robot.keyToggle(pauseKey, 'down');
+    robot.keyToggle(config.gamePauseKey, 'down');
     yield sleep(100);
-    robot.keyToggle(pauseKey, 'up');
+    robot.keyToggle(config.gamePauseKey, 'up');
     yield sleep(100);
 });
 
 const unpause = co.wrap(function*() {
-    robot.keyToggle(unpauseKey, 'down');
+    robot.keyToggle(game.gameResumeKey, 'down');
     yield sleep(100);
-    robot.keyToggle(unpauseKey, 'up');
+    robot.keyToggle(game.gameResumeKey, 'up');
     yield sleep(100);
 });
 

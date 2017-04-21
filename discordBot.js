@@ -3,7 +3,7 @@ const Discord = require('discord.io');
 const config = require('./config.json');
 
 let bot;
-let gbaChannel;
+let botChannel;
 let lastButtonPress = 0;
 
 function log(msg) {
@@ -16,7 +16,7 @@ function log(msg) {
 function getManyMessages(cb) {
     log('getting messages!');
     bot.getMessages({
-        channelID: gbaChannel,
+        channelID: botChannel,
         limit: 100
     }, function(err, messages) {
         if (err) {
@@ -28,7 +28,7 @@ function getManyMessages(cb) {
 
 function deleteMessages(messages, cb) {
     let method;
-    let opts = {channelID: gbaChannel};
+    let opts = {channelID: botChannel};
     messages = messages || [];
     if (messages.length === 1) {
         method = 'deleteMessage';
@@ -54,12 +54,11 @@ function deleteMessages(messages, cb) {
 
 function updateScreen() {
     log('uploading image!');
+    const cmdCooldown = config.commandCooldown / 1000;
     bot.uploadFile({
-        to: gbaChannel,
+        to: botChannel,
         file: config.screenshotPath,
-        message: 'Type: a, b, l, r, up, down, left, right, start, select, update, or clean. ' +
-            'You can also multiply some commands like this: up*3 . ' +
-            'There is a command cooldown of 5 seconds.'
+        message: config.discordBotMessage
     }, function(err) {
         if (err) {
             console.error(err);
@@ -86,30 +85,18 @@ function startDiscordBot() {
         for (let x = 0; x < channels.length; x++) {
             const chan = bot.channels[channels[x]];
             if (chan.type === 'text' && chan.name === config.botChannel) {
-                gbaChannel = channels[x];
+                botChannel = channels[x];
                 break;
             }
         }
     });
 
     const specialCommands = {
-        UPDATE: updateScreen,
-        CLEAN: cleanABunch
-    };
-    const validKeys = {
-        A: 1,
-        B: 1,
-        L: 1,
-        R: 1,
-        START: 1,
-        SELECT: 1,
-        LEFT: 1,
-        RIGHT: 1,
-        DOWN: 1,
-        UP: 1
+        update: updateScreen,
+        clean: cleanABunch
     };
     bot.on('message', function(user, userID, channelID, message, event) {
-        const upMessage = (message || '').toUpperCase();
+        const upMessage = (message || '').toLowerCase();
         const messageParts = upMessage.split('*').map(function(part) {
             return part.trim();
         });
@@ -120,12 +107,12 @@ function startDiscordBot() {
             if (isNaN(repeat)) {
                 repeat = 1;
             }
-            repeat = Math.max(Math.min(repeat, 9), 1);
+            repeat = Math.max(Math.min(repeat, config.maxButtonPressesPerTurn), 1);
         }
 
-        const isValidKey = validKeys[cmd];
+        const isValidKey = !!config.chatToKeyboardKey[cmd];
         const specialCommand = specialCommands[cmd];
-        if (channelID === gbaChannel && (isValidKey || specialCommand)) {
+        if (channelID === botChannel && (isValidKey || specialCommand)) {
             const now = Date.now();
             if (now - lastButtonPress > config.commandCooldown) {
                 log('got command: ' + cmd);
